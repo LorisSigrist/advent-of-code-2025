@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-const input = await fs.readFile("input_day1.txt", { encoding: "utf-8" });
+const input = await fs.readFile("input.txt", { encoding: "utf-8" });
 
 const rotations = input.split("\n");
 let dial = 50;
