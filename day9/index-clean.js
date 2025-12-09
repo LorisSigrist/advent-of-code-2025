@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { distinctPairs } from "../utils/list.js";
 
 const input = await fs.readFile("input.txt", { encoding: "utf-8" });
 const lines = input.trim().split("\n"); // trim off final newline
@@ -156,20 +157,3 @@ for (const [a, b] of distinctPairs(cornersX)) {
 }
 
 console.log(max);
-
-
-/**
- * Iterate over all distinct pairs. Pairs are not checked symmetrically.
- * eg if [x,y] is returned, [y,x] is not also returned
- * 
- * @template T
- * @param {T[]} arr
- * @returns {Generator<[T, T]>}
- */
-function* distinctPairs(arr) {  
-  for(let i = 0; i < arr.length - 1; i++) {
-    for (let j = arr.length - 1; j > i; j--) {
-      yield [arr[i], arr[j]];
-    }
-  }
-}

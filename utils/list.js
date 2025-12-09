@@ -48,3 +48,22 @@ export function average(arr) {
     return sum(arr) / arr.length;
 }
 
+
+
+/**
+ * Iterate over all distinct pairs. Pairs are not checked symmetrically.
+ * eg if [x,y] is returned, [y,x] is not also returned.
+ * 
+ * No guarantees are made about the order of the pairs
+ * 
+ * @template T
+ * @param {T[]} arr
+ * @returns {Generator<[T, T]>}
+ */
+export function* distinctPairs(arr) {  
+  for(let i = 0; i < arr.length - 1; i++) {
+    for (let j = arr.length - 1; j > i; j--) {
+      yield [arr[i], arr[j]];
+    }
+  }
+}
