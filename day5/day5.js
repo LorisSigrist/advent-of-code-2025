@@ -25,7 +25,7 @@ function insert(range) {
     // if there is an overlap, there can be one of four situations
     // - range = insertedRange -> done
     // - insertedRange fully contains range -> done
-    // - range fully contains insertedRange -> reinsert tail & head
+    // - range fully contains insertedRange -> reinsert tail &
     // - range starts & ends after the insertedRange -> reinsert tail
     // - range starts & ends before the insertedRange -> reinsert head
 
