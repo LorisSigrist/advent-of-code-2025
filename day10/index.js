@@ -24,13 +24,15 @@ function parseLine(string) {
   const buttonsMatches = string.matchAll(BUTTONS_REGEX);
   const joltageMatch = string.match(JOLTAGE_REGEX);
 
+  // @ts-ignore
   const lights = lightsMatch[0]?.slice(1, -1);
   let buttons = [];
   for (const buttonMatch of buttonsMatches) {
     const button = buttonMatch[0].slice(1, -1).split(",").map(Number);
     buttons.push(button);
   }
-
+  
+  // @ts-ignore
   const joltage = joltageMatch[0].slice(1, -1).split(",").map(Number);
   return {
     lights,
@@ -198,7 +200,6 @@ function* binaryArrays(n) {
   }
 }
 
-let elements = [];
 const circuits = lines.map(parseLine);
 const solution1 = sum(circuits.map(minimumNumberOfPressesToTurnOn));
 console.log(solution1);
