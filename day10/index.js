@@ -132,24 +132,29 @@ function minimumNumberOfPressesToMatchJoltage(circuit) {
     // Preferentially search buttons that are the only option to decrease
     // large values while leaving small values as they are
     for (let i = 0; i < remainingPresses.length; i++) {
-      for (let j = 0; j < remainingPresses.length; j++) {
-        if (remainingPresses[i] > remainingPresses[j]) {
-          const buttonsThatCanDecreaseIandNotJ = buttons.filter(
-            (b) => b.includes(i) && !b.includes(j)
-          );
-          if (buttonsThatCanDecreaseIandNotJ.length === 0) return; // we're cooked
+      for (let j = i; j < remainingPresses.length; j++) {
+        const equal = remainingPresses[i] == remainingPresses[j];
+        if (equal) continue; // no optimisation to apply
 
-          // If there is only one, we're forced to press it
-          if (buttonsThatCanDecreaseIandNotJ.length === 1) {
-            const newRemainingPresses = remainingPressesAfterButtonPress(
-              remainingPresses,
-              buttonsThatCanDecreaseIandNotJ[0]
-            );
-            recursivelySearch(newRemainingPresses, buttons, depth + 1);
-            return;
-          }
-          // TODO: more heuristicss
+        const minIdx = remainingPresses[i] > remainingPresses[j] ? j : i;
+        const maxIdx = remainingPresses[i] > remainingPresses[j] ? i : j;
+
+        const helpfulButtons = [];
+        for (const button of buttons) {
+          if (button.includes(maxIdx) && !button.includes(minIdx))
+            helpfulButtons.push(button);
         }
+
+        if (helpfulButtons.length == 0) return; // can't solve the problem from this state
+        if (helpfulButtons.length >= 2) continue; // no optimisation
+
+        const forcedButton = helpfulButtons[0];
+        const newRemainingPresses = remainingPressesAfterButtonPress(
+          remainingPresses,
+          forcedButton
+        );
+        recursivelySearch(newRemainingPresses, buttons, depth + 1);
+        return;
       }
     }
 
