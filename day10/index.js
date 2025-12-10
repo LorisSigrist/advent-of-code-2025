@@ -1,10 +1,5 @@
 import fs from "node:fs/promises";
-import {
-  splitAtDelimiter,
-  NUMBER_COMPARATOR,
-  distinctPairs,
-  sum,
-} from "../utils/list.js";
+import { sum } from "../utils/list.js";
 
 const input = await fs.readFile("input.txt", { encoding: "utf-8" });
 const lines = input.trim().split("\n"); // trim off final newline
@@ -93,79 +88,90 @@ function minimumNumberOfPressesToTurnOn(circuit) {
 
 /**
  * @param {Circuit} circuit
+ * @return {number}
  */
 function minimumNumberOfPressesToMatchJoltage(circuit) {
-  let minAssignment = Number.POSITIVE_INFINITY;
-
-  // Fuck it, brute force
-  const options = binaryArrays(circuit.buttons.length);
+  let minPresses = Number.MAX_SAFE_INTEGER;
 
   /**
-   * @param {number[]} option
-   * @returns {number[]} joltages
+   * @param {number[]} remainingPresses
+   * @param {number[]} button
+   * @returns {number[]}
    */
-  function tryAssignemt(option) {
-    const state = new Array(circuit.joltage.length).fill(0);
-    for (let i = 0; i < option.length; i++) {
-      const button = circuit.buttons[i];
-
-      for (const idx of button) {
-        state[idx] = state[idx] + option[i];
-      }
+  function remainingPressesAfterButtonPress(remainingPresses, button) {
+    const newRemainingPresses = [...remainingPresses]; // copy
+    for (const idx of button) {
+      newRemainingPresses[idx]--;
     }
-    return state;
+    return newRemainingPresses;
   }
 
-  function maxTimesThatButtonCanBePressed(i) {
-    const option = new Array(circuit.buttons.length).fill(0);
+  /**
+   * @param {number[]} remainingPresses How many times each remaining light needs to be hit
+   * @param {number[][]} buttons The buttons
+   * @param {number} depth How many buttons we've pressed so far during the search
+   */
+  function recursivelySearch(remainingPresses, buttons, depth) {
+    // if there are any negative values, we've pressed too many buttons
+    const invalid = remainingPresses.some((v) => v < 0);
+    if (invalid) return;
 
-    while (true) {
-      const state = tryAssignemt(option);
+    // If there are no non-zero values we've found a solution
+    const solved = !remainingPresses.some((v) => v != 0);
+    if (solved) {
+      minPresses = depth; // we would have aborted earier if this weren't the minimum
+    }
 
-      for (let j = 0; j < state.length; j++) {
-        if (circuit.joltage[j] < state[j]) {
-          return option[i] - 1;
+    // Abort if we already exceeded the best known minimum
+    const remainingStepsUntilSolution = remainingPresses.reduce(
+      (a, b) => Math.max(a, b),
+      0
+    );
+    if (remainingStepsUntilSolution + depth > minPresses) return;
+
+    // Preferentially search buttons that are the only option to decrease
+    // large values while leaving small values as they are
+    for (let i = 0; i < remainingPresses.length; i++) {
+      for (let j = 0; j < remainingPresses.length; j++) {
+        if (remainingPresses[i] > remainingPresses[j]) {
+          const buttonsThatCanDecreaseIandNotJ = buttons.filter(
+            (b) => b.includes(i) && !b.includes(j)
+          );
+          if (buttonsThatCanDecreaseIandNotJ.length === 0) return; // we're cooked
+
+          // If there is only one, we're forced to press it
+          if (buttonsThatCanDecreaseIandNotJ.length === 1) {
+            const newRemainingPresses = remainingPressesAfterButtonPress(
+              remainingPresses,
+              buttonsThatCanDecreaseIandNotJ[0]
+            );
+            recursivelySearch(newRemainingPresses, buttons, depth + 1);
+            return;
+          }
+          // TODO: more heuristicss
         }
       }
-      option[i]++;
+    }
+
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const newRemainingPresses = remainingPressesAfterButtonPress(
+        remainingPresses,
+        button
+      );
+
+      recursivelySearch(newRemainingPresses, buttons.slice(i), depth + 1);
     }
   }
 
-  // Find the max times you can press each button individually before you're too big
-  const buttonLimits = [];
-  for (let i = 0; i < circuit.buttons.length; i++) {
-    buttonLimits[i] = maxTimesThatButtonCanBePressed(i);
-  }
-    
-    const numCombinations = buttonLimits.reduce((a, b) => a * b, 1);
-    return numCombinations;
+  recursivelySearch(circuit.joltage, circuit.buttons, 0);
 
-  for (const option of options) {
-    const state = tryAssignemt(option);
+  if (minPresses == Number.MAX_SAFE_INTEGER)
+    throw new Error("No solution found");
 
-    // loop over the state to see if it matches the lights
-    let matches = true;
-    for (let i = 0; i < circuit.joltage.length; i++) {
-      if (state[i] != circuit.joltage[i]) {
-        matches = false;
-        break;
-      }
-    }
+  console.log("Found optimal solution for", circuit.joltage);
 
-    // if it matches, does it use fewer buttons?
-    if (matches) {
-      const numButtons = option.reduce((prev, acc) => acc + prev, 0);
-      if (numButtons < minAssignment) {
-        minAssignment = numButtons;
-      }
-    }
-  }
-
-  if (minAssignment == Number.POSITIVE_INFINITY) {
-    throw new Error("No assignemtn found");
-  }
-
-  return minAssignment;
+  return minPresses;
 }
 
 /**
@@ -190,6 +196,7 @@ function* binaryArrays(n) {
 let elements = [];
 const circuits = lines.map(parseLine);
 const solution1 = sum(circuits.map(minimumNumberOfPressesToTurnOn));
-const solution2 = sum(circuits.map(minimumNumberOfPressesToMatchJoltage));
 console.log(solution1);
+
+const solution2 = sum(circuits.map(minimumNumberOfPressesToMatchJoltage));
 console.log(solution2);
