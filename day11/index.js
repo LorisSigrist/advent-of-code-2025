@@ -55,23 +55,34 @@ let validPaths = 0;
  * @param {string} target
  * @param {Map<string, Node>} graph
  * @param {Set<string>} visited
+ *  @param {string[]} mustIncludes
+ * @param {Set<string>} visitedMustIncludes
+ * @param {Record<string, number>} cache
  *
  * @returns {number}
  */
-function dfs(node, target, graph, visited, path, mustIncludes) {
-  path = [...path, node];
-    if (node == target) {
-       
-    let includesAll = true;
-    for (const include of mustIncludes) {
-      if (!path.includes(include)) includesAll = false;
+function dfs(
+  node,
+  target,
+  graph,
+  visited,
+  mustIncludes,
+  visitedMustIncludes,
+  cache
+) {
+  const key = node + "|" + [...visitedMustIncludes].sort().join(",");
+  if (key in cache) return cache[key];
+
+  if (node == target) {
+    if (mustIncludes.length != visitedMustIncludes.size) {
+      // not a valid path
+      cache[key] = 0;
+      return 0;
     }
-        if (includesAll) {
-            validPaths++;
-            console.log(validPaths);
-        }
-        
-    return includesAll ? 1 : 0;
+
+    // valid path
+    cache[key] = 1;
+    return 1;
   }
 
   visited.add(node);
@@ -82,12 +93,33 @@ function dfs(node, target, graph, visited, path, mustIncludes) {
   let total = 0;
   for (const to of Node.tos) {
     if (!visited.has(to)) {
-      total += dfs(to, target, graph, visited, path, mustIncludes);
+      const newVisitedMustIncludes = mustIncludes.includes(to)
+        ? new Set([...visitedMustIncludes, to])
+        : visitedMustIncludes;
+
+      total += dfs(
+        to,
+        target,
+        graph,
+        visited,
+        mustIncludes,
+        newVisitedMustIncludes,
+        cache
+      );
     }
   }
+  cache[key] = total;
   visited.delete(node);
   return total;
 }
 
-const solution = dfs("svr", "out", graph, new Set(), [], ["fft", "dac"]);
+const solution = dfs(
+  "svr",
+  "out",
+  graph,
+  new Set(),
+    ["fft", "dac"],
+   new Set(),
+  {}
+);
 console.log(solution);
